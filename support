@@ -1,0 +1,494 @@
+
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI Settings
+local GUI = {
+    Enabled = true,
+    ToggleKey = Enum.KeyCode.RightShift,
+    Theme = {
+        Background = Color3.fromRGB(25, 25, 25),
+        Secondary = Color3.fromRGB(35, 35, 35),
+        Accent = Color3.fromRGB(0, 170, 255),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextDim = Color3.fromRGB(150, 150, 150)
+    },
+    Size = UDim2.new(0, 500, 0, 350),
+    Position = UDim2.new(0.5, -250, 0.5, -175) -- center
+}
+
+-- Main ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DaHoodExploit"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Frame (draggable window)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = GUI.Theme.Background
+MainFrame.BorderSizePixel = 0
+MainFrame.Size = GUI.Size
+MainFrame.Position = GUI.Position
+MainFrame.ClipsDescendants = true
+
+-- Rounded corners
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Title Bar (for dragging)
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Parent = MainFrame
+TitleBar.BackgroundColor3 = GUI.Theme.Secondary
+TitleBar.BorderSizePixel = 0
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+
+local TitleBarCorner = Instance.new("UICorner")
+TitleBarCorner.CornerRadius = UDim.new(0, 8)
+TitleBarCorner.Parent = TitleBar
+-- Only top corners rounded
+TitleBarCorner:GetPropertyChangedSignal("CornerRadius"):Connect(function() end) -- dummy
+
+-- Title Text
+local TitleText = Instance.new("TextLabel")
+TitleText.Parent = TitleBar
+TitleText.BackgroundTransparency = 1
+TitleText.Size = UDim2.new(1, -10, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.Text = "DaHood Exploit"
+TitleText.TextColor3 = GUI.Theme.Text
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 16
+
+-- Close Button (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Parent = TitleBar
+CloseButton.BackgroundTransparency = 1
+CloseButton.Size = UDim2.new(0, 30, 1, 0)
+CloseButton.Position = UDim2.new(1, -30, 0, 0)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = GUI.Theme.TextDim
+CloseButton.TextSize = 20
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.ZIndex = 2
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui.Enabled = false
+end)
+
+-- Tabs Container
+local TabsContainer = Instance.new("Frame")
+TabsContainer.Name = "TabsContainer"
+TabsContainer.Parent = MainFrame
+TabsContainer.BackgroundColor3 = GUI.Theme.Secondary
+TabsContainer.BorderSizePixel = 0
+TabsContainer.Size = UDim2.new(1, 0, 0, 40)
+TabsContainer.Position = UDim2.new(0, 0, 0, 30)
+
+local TabsList = Instance.new("UIListLayout")
+TabsList.Parent = TabsContainer
+TabsList.FillDirection = Enum.FillDirection.Horizontal
+TabsList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+TabsList.VerticalAlignment = Enum.VerticalAlignment.Center
+TabsList.Padding = UDim.new(0, 5)
+
+-- Tab Buttons will be created here
+local Tabs = {
+    "Combat",
+    "Movement",
+    "Visuals",
+    "Misc"
+}
+
+local TabButtons = {}
+local ContentFrames = {}
+
+-- Content Area (where features go)
+local ContentArea = Instance.new("Frame")
+ContentArea.Name = "ContentArea"
+ContentArea.Parent = MainFrame
+ContentArea.BackgroundColor3 = GUI.Theme.Background
+ContentArea.BorderSizePixel = 0
+ContentArea.Size = UDim2.new(1, -20, 1, -100)
+ContentArea.Position = UDim2.new(0, 10, 0, 80)
+
+-- Create individual content frames for each tab
+for i, tabName in ipairs(Tabs) do
+    -- Tab Button
+    local btn = Instance.new("TextButton")
+    btn.Parent = TabsContainer
+    btn.BackgroundColor3 = GUI.Theme.Accent
+    btn.BackgroundTransparency = 0.8
+    btn.Size = UDim2.new(0, 80, 0, 30)
+    btn.Text = tabName
+    btn.TextColor3 = GUI.Theme.Text
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.AutoButtonColor = false
+    btn.ZIndex = 5
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = btn
+    
+    TabButtons[tabName] = btn
+    
+    -- Content Frame for this tab
+    local content = Instance.new("ScrollingFrame")
+    content.Name = tabName .. "Content"
+    content.Parent = ContentArea
+    content.BackgroundTransparency = 1
+    content.BorderSizePixel = 0
+    content.Size = UDim2.new(1, 0, 1, 0)
+    content.ScrollBarThickness = 4
+    content.CanvasSize = UDim2.new(0, 0, 0, 0)
+    content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    content.Visible = (i == 1) -- first tab visible
+    content.ZIndex = 2
+    
+    -- Layout for features inside this tab
+    local layout = Instance.new("UIListLayout")
+    layout.Parent = content
+    layout.Padding = UDim.new(0, 5)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    -- Adjust canvas size when layout changes
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        content.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+    end)
+    
+    ContentFrames[tabName] = content
+end
+
+-- Tab switching logic
+for tabName, btn in pairs(TabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        -- Hide all content
+        for _, frame in pairs(ContentFrames) do
+            frame.Visible = false
+        end
+        -- Show selected
+        ContentFrames[tabName].Visible = true
+        
+        -- Update button visuals (optional: highlight active tab)
+        for _, otherBtn in pairs(TabButtons) do
+            otherBtn.BackgroundTransparency = 0.8
+        end
+        btn.BackgroundTransparency = 0.2
+    end)
+end
+
+-- Initialize first tab as active
+TabButtons[Tabs[1]].BackgroundTransparency = 0.2
+
+-- Dragging functionality
+local dragging = false
+local dragStart, startPos
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Toggle GUI with key
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == GUI.ToggleKey then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
+
+-- Helper function to create a toggle in a tab
+function CreateToggle(parentTab, text, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Parent = parentTab
+    frame.BackgroundColor3 = GUI.Theme.Secondary
+    frame.BorderSizePixel = 0
+    frame.Size = UDim2.new(1, -10, 0, 30)
+    frame.Position = UDim2.new(0, 5, 0, 0)
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = frame
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, -40, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Text = text
+    label.TextColor3 = GUI.Theme.Text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    
+    local toggle = Instance.new("TextButton")
+    toggle.Parent = frame
+    toggle.BackgroundColor3 = default and GUI.Theme.Accent or GUI.Theme.Background
+    toggle.Size = UDim2.new(0, 30, 0, 20)
+    toggle.Position = UDim2.new(1, -40, 0.5, -10)
+    toggle.Text = ""
+    toggle.AutoButtonColor = false
+    toggle.ZIndex = 2
+    
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 4)
+    toggleCorner.Parent = toggle
+    
+    local state = default
+    local function updateColor()
+        toggle.BackgroundColor3 = state and GUI.Theme.Accent or GUI.Theme.Background
+    end
+    updateColor()
+    
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        updateColor()
+        if callback then callback(state) end
+    end)
+    
+    return toggle
+end
+
+-- Helper function to create a slider
+function CreateSlider(parentTab, text, min, max, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Parent = parentTab
+    frame.BackgroundColor3 = GUI.Theme.Secondary
+    frame.BorderSizePixel = 0
+    frame.Size = UDim2.new(1, -10, 0, 50)
+    frame.Position = UDim2.new(0, 5, 0, 0)
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = frame
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(0.5, -5, 0, 20)
+    label.Position = UDim2.new(0, 10, 0, 5)
+    label.Text = text
+    label.TextColor3 = GUI.Theme.Text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Parent = frame
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Size = UDim2.new(0.5, -5, 0, 20)
+    valueLabel.Position = UDim2.new(0.5, 0, 0, 5)
+    valueLabel.Text = tostring(default)
+    valueLabel.TextColor3 = GUI.Theme.Accent
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Font = Enum.Font.Gotham
+    valueLabel.TextSize = 14
+    
+    local sliderBg = Instance.new("Frame")
+    sliderBg.Parent = frame
+    sliderBg.BackgroundColor3 = GUI.Theme.Background
+    sliderBg.BorderSizePixel = 0
+    sliderBg.Size = UDim2.new(1, -20, 0, 6)
+    sliderBg.Position = UDim2.new(0, 10, 0, 30)
+    
+    local sliderBgCorner = Instance.new("UICorner")
+    sliderBgCorner.CornerRadius = UDim.new(1, 0)
+    sliderBgCorner.Parent = sliderBg
+    
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Parent = sliderBg
+    sliderFill.BackgroundColor3 = GUI.Theme.Accent
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    
+    local sliderFillCorner = Instance.new("UICorner")
+    sliderFillCorner.CornerRadius = UDim.new(1, 0)
+    sliderFillCorner.Parent = sliderFill
+    
+    local dragButton = Instance.new("TextButton")
+    dragButton.Parent = sliderBg
+    dragButton.BackgroundTransparency = 1
+    dragButton.Size = UDim2.new(1, 0, 1, 0)
+    dragButton.Text = ""
+    dragButton.ZIndex = 10
+    
+    local value = default
+    local dragging = false
+    
+    local function updateSlider(input)
+        local pos = input.Position.X - sliderBg.AbsolutePosition.X
+        local percent = math.clamp(pos / sliderBg.AbsoluteSize.X, 0, 1)
+        value = min + (max - min) * percent
+        value = math.floor(value * 10) / 10 -- round to 1 decimal
+        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        valueLabel.Text = tostring(value)
+        if callback then callback(value) end
+    end
+    
+    dragButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            updateSlider(input)
+        end
+    end)
+    
+    dragButton.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input)
+        end
+    end)
+    
+    return value
+end
+
+-- Helper function to create a dropdown
+function CreateDropdown(parentTab, text, options, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Parent = parentTab
+    frame.BackgroundColor3 = GUI.Theme.Secondary
+    frame.BorderSizePixel = 0
+    frame.Size = UDim2.new(1, -10, 0, 60)
+    frame.Position = UDim2.new(0, 5, 0, 0)
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = frame
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, -20, 0, 20)
+    label.Position = UDim2.new(0, 10, 0, 5)
+    label.Text = text
+    label.TextColor3 = GUI.Theme.Text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    
+    local dropButton = Instance.new("TextButton")
+    dropButton.Parent = frame
+    dropButton.BackgroundColor3 = GUI.Theme.Background
+    dropButton.Size = UDim2.new(1, -20, 0, 25)
+    dropButton.Position = UDim2.new(0, 10, 0, 25)
+    dropButton.Text = "Select..."
+    dropButton.TextColor3 = GUI.Theme.TextDim
+    dropButton.Font = Enum.Font.Gotham
+    dropButton.TextSize = 14
+    dropButton.ZIndex = 5
+    
+    local dropCorner = Instance.new("UICorner")
+    dropCorner.CornerRadius = UDim.new(0, 4)
+    dropCorner.Parent = dropButton
+    
+    local dropdownList = Instance.new("Frame")
+    dropdownList.Parent = frame
+    dropdownList.BackgroundColor3 = GUI.Theme.Background
+    dropdownList.BorderSizePixel = 0
+    dropdownList.Size = UDim2.new(1, -20, 0, 0)
+    dropdownList.Position = UDim2.new(0, 10, 0, 55)
+    dropdownList.Visible = false
+    dropdownList.ZIndex = 10
+    dropdownList.ClipsDescendants = true
+    
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Parent = dropdownList
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    local function closeDropdown()
+        dropdownList.Visible = false
+    end
+    
+    dropButton.MouseButton1Click:Connect(function()
+        dropdownList.Visible = not dropdownList.Visible
+    end)
+    
+    for _, opt in ipairs(options) do
+        local optBtn = Instance.new("TextButton")
+        optBtn.Parent = dropdownList
+        optBtn.BackgroundColor3 = GUI.Theme.Background
+        optBtn.Size = UDim2.new(1, 0, 0, 25)
+        optBtn.Text = opt
+        optBtn.TextColor3 = GUI.Theme.Text
+        optBtn.Font = Enum.Font.Gotham
+        optBtn.TextSize = 14
+        optBtn.AutoButtonColor = false
+        optBtn.ZIndex = 11
+        
+        optBtn.MouseButton1Click:Connect(function()
+            dropButton.Text = opt
+            if callback then callback(opt) end
+            closeDropdown()
+        end)
+        
+        local optCorner = Instance.new("UICorner")
+        optCorner.CornerRadius = UDim.new(0, 4)
+        optCorner.Parent = optBtn
+    end
+    
+    -- Adjust dropdown height based on options
+    dropdownList.Size = UDim2.new(1, -20, 0, #options * 25)
+    
+    return dropdownList
+end
+
+-- Example: Add some features to tabs (replace with actual logic later)
+
+-- Combat Tab
+local combat = ContentFrames["Combat"]
+CreateToggle(combat, "Aimbot", true, function(state) print("Aimbot:", state) end)
+CreateSlider(combat, "FOV Size", 50, 500, 150, function(val) print("FOV:", val) end)
+CreateSlider(combat, "Smoothness", 0.1, 1, 0.3, function(val) print("Smoothness:", val) end)
+CreateDropdown(combat, "Target Part", {"Head", "Torso", "Root"}, "Head", function(opt) print("Target:", opt) end)
+
+-- Movement Tab
+local movement = ContentFrames["Movement"]
+CreateToggle(movement, "Walkspeed", false, function(state) print("Walkspeed:", state) end)
+CreateSlider(movement, "Speed", 16, 200, 16, function(val) print("Speed:", val) end)
+CreateToggle(movement, "Fly", false, function(state) print("Fly:", state) end)
+
+-- Visuals Tab
+local visuals = ContentFrames["Visuals"]
+CreateToggle(visuals, "ESP Boxes", true, function(state) print("ESP Boxes:", state) end)
+CreateToggle(visuals, "Tracers", true, function(state) print("Tracers:", state) end)
+CreateToggle(visuals, "Health Bars", true, function(state) print("Health Bars:", state) end)
+
+-- Misc Tab
+local misc = ContentFrames["Misc"]
+CreateToggle(misc, "Anti-Kick", true, function(state) print("Anti-Kick:", state) end)
+CreateToggle(misc, "Auto Farm", false, function(state) print("Auto Farm:", state) end)
